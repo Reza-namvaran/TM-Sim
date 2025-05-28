@@ -9,7 +9,7 @@ class TuringMachine:
         self.blank_symbol = config['blank_symbol']
         self.transitions = config['transition']
         self.iniial_state = config['initial_state']
-        self.final_state = config.get('final_state', [])
+        self.final_states = config.get('final_state', [])
 
         # Initialize tapes and heads
         self.tapes = []
@@ -55,6 +55,7 @@ class TuringMachine:
 
             if self.current_state in self.final_states:
                 self.halted = True
+                self.logger.info(f"Reached final state: {self.current_state}")
 
         def _read_symbol(self) -> list:
             symbols = []
