@@ -54,7 +54,7 @@ class TuringMachine:
         )
 
         if self.current_state in self.final_states:
-            self.halted = True
+            self.halt = True
             self.logger.info(f"Reached final state: {self.current_state}")
 
     def _read_symbol(self) -> list:

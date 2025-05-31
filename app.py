@@ -39,5 +39,43 @@ def debug_samples():
         "loaded_samples": list(samples.keys())
     })
 
+def list_machines():
+    """List all available machines"""
+    return jsonify(list(samples.keys()))
+
+@app.route('/machine/<name>')
+def get_machine(name):
+    """Get configuration for a specific machine"""
+    if name in samples:
+        return jsonify(samples[name])
+    return jsonify({"error": "Machine not found"}), 404
+
+@app.route('/simulate/init', methods=["POST"])
+def init_simulate():
+    data = request.get_json()
+    machine_name = data.get('machine')
+    input_string = data.get('input', '')
+
+    if machine_name not in samples:
+        return jsonify({"error": "Machine not found"}), 404
+
+    config = samples[machine_name]
+
+    try:
+        machine = TuringMachine(config)
+        machine.initialize_tape([input_string])
+
+
+        response = {
+            "state": machine.current_state,
+            "tapes": machine.tapes,
+            "heads": machine.heads,
+            "halted": machine.halt 
+        }
+        return jsonify(response)
+    except Exception as err:
+        logger.error(f"Initilization error: {str(err)}")
+        return jsonify({"error": str(err)}), 400
+
 if __name__ == '__main__':
     app.run(debug=True)
