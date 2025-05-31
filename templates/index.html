@@ -1,10 +1,71 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TM Simulator</title>
+    <title>Turing Machine Simulator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
+    <header>
+        <h1>Turing Machine Simulator</h1>
+        <p>Visualize how Turing Machines process input step-by-step</p>
+    </header>
     
+    <main class="container">
+        <section id="machine-selection">
+            <h2>1. Select a Turing Machine</h2>
+            <div class="control-group">
+                <label for="machine-select">Available Machines:</label>
+                <select id="machine-select">
+                    <option value="">Loading machines...</option>
+                </select>
+            </div>
+        </section>
+        
+        <section id="input-control">
+            <h2>2. Provide Input</h2>
+            <div class="control-group">
+                <label for="input-string">Input String:</label>
+                <input type="text" id="input-string" placeholder="Enter input">
+                <button id="init-btn">Initialize Simulation</button>
+            </div>
+        </section>
+        
+        <section id="simulation-area">
+            <h2>3. Simulation</h2>
+            <div id="tapes-container">
+                <!-- Tapes will be rendered here -->
+            </div>
+        </section>
+        
+        <section id="state-info">
+            <h2>Current State</h2>
+            <div class="status-card">
+                <div class="status-item">
+                    <div>Current State</div>
+                    <div id="state-display" class="status-value">N/A</div>
+                </div>
+                <div class="status-item">
+                    <div>Step Count</div>
+                    <div id="step-display" class="status-value">0</div>
+                </div>
+                <div class="status-item">
+                    <div>Status</div>
+                    <div id="status-display" class="status-value status-ready">Not initialized</div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="controls">
+            <h2>4. Controls</h2>
+            <div class="control-group">
+                <button id="step-btn">Step Forward</button>
+                <button id="reset-btn">Reset Simulation</button>
+            </div>
+        </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>
