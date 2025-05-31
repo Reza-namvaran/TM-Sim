@@ -39,6 +39,7 @@ def debug_samples():
         "loaded_samples": list(samples.keys())
     })
 
+@app.route('/machines')
 def list_machines():
     """List all available machines"""
     return jsonify(list(samples.keys()))
@@ -70,12 +71,56 @@ def init_simulate():
             "state": machine.current_state,
             "tapes": machine.tapes,
             "heads": machine.heads,
-            "halted": machine.halt 
+            "halt": machine.halt 
         }
         return jsonify(response)
     except Exception as err:
         logger.error(f"Initilization error: {str(err)}")
         return jsonify({"error": str(err)}), 400
+
+@app.route('/simulate/step', methods=["POST"])
+def step_simulation():
+    """Execute a single step in the simulation"""
+    data = request.get_json()
+    machine_name = data.get('machine')
+    current_state = data.get('state')
+    tapes = data.get('tapes')
+    heads = data.get('heads')
+    halted = data.get('halt', False)
+    
+    if machine_name not in samples:
+        return jsonify({"error": "Machine not found"}), 404
+    
+    config = samples[machine_name]
+    
+    try:
+        # Recreate machine at current state
+        machine = TuringMachine(config)
+        machine.current_state = current_state
+        machine.tapes = tapes
+        machine.heads = heads
+        machine.halt = halted
+        
+        # Execute step
+        if not machine.halt:
+            machine.step()
+        
+        # Prepare response
+        response = {
+            "state": machine.current_state,
+            "tapes": machine.tapes,
+            "heads": machine.heads,
+            "halt": machine.halt,
+            "step_count": machine.step_count
+        }
+        return jsonify(response)
+    
+    except SimulationError as e:
+        logger.warning(f"Simulation error: {str(e)}")
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        logger.error(f"Step error: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
