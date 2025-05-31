@@ -32,6 +32,7 @@ def _validate_config(config) -> None:
         raise InvalidMachineError("Number of tapes must be a positive integer")
 
     if "final_state" not in config and "final_states" not in config:
+        config["final_states"] = [config["final_state"]]
         logger.warning("No final state defined - machine may run indefinitely")
 
 
