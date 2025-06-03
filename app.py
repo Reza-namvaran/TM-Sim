@@ -3,13 +3,26 @@ from turing import TuringMachine, parse_machine, InvalidMachineError, Simulation
 import logging
 import yaml
 import os
+import sys
 
 app = Flask(__name__)
 app.config.from_object("config.Config")
 
-logging.basicConfig(level=app.config['LOG_LEVEL'],
-                    format=app.config['LOG_FORMAT'],
-                    filename=app.config['LOG_FILE'])
+if app.config.get('LOG_TO_FILE', False):
+    # Local development: log to file
+    logging.basicConfig(
+        level=app.config['LOG_LEVEL'],
+        format=app.config['LOG_FORMAT'],
+        filename=app.config['LOG_FILE']
+    )
+else:
+    # Production: log to stdout
+    logging.basicConfig(
+        level=app.config['LOG_LEVEL'],
+        format=app.config['LOG_FORMAT'],
+        stream=sys.stdout
+    )
+
 logger = logging.getLogger(__name__)
 
 SAMPLE_DIR = os.path.join(os.path.dirname(__file__), 'samples')
