@@ -1,0 +1,25 @@
+name: "Contains 101"
+description: "Accepts strings that contain 101"
+category: "Language"
+tapes: 1
+blank_symbol: "_"
+initial_state: "q0"
+final_states: ["q3"]
+input_spec:
+  - label: "Input String"
+    regex: "^[01]*$"
+    example: "11011"
+transition:
+  - [[ "q0", ["0"] ], [ "q0", ["0"], ["R"] ]]
+  - [[ "q0", ["1"] ], [ "q1", ["1"], ["R"] ]]
+
+  - [[ "q1", ["1"] ], [ "q1", ["1"], ["R"] ]]
+  - [[ "q1", ["0"] ], [ "q2", ["0"], ["R"] ]]
+
+  - [[ "q2", ["0"] ], [ "q0", ["0"], ["R"] ]]
+  - [[ "q2", ["1"] ], [ "q3", ["1"], ["R"] ]]
+
+  - [[ "q3", ["1"] ], [ "q3", ["1"], ["R"] ]]
+  - [[ "q3", ["0"] ], [ "q3", ["0"], ["R"] ]]
+  - [[ "q3", ["_"] ], [ "q3", ["_"], ["N"] ]]
+
