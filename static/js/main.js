@@ -1,6 +1,8 @@
 // Global state
 let currentSimulation = null;
 let currentMachineConfig = null;
+let autoStepInterval = null;
+let isAutoStepping = false;
 
 // DOM elements
 const machineSelect = document.getElementById('machine-select');
@@ -12,6 +14,8 @@ const tapesContainer = document.getElementById('tapes-container');
 const stateDisplay = document.getElementById('state-display');
 const stepDisplay = document.getElementById('step-display');
 const statusDisplay = document.getElementById('status-display');
+const autoStepBtn = document.getElementById('auto-step-btn');
+const speedControl = document.getElementById('speed-control');
 
 // Initialize application
 function initApp() {
@@ -22,11 +26,80 @@ function initApp() {
     initBtn.addEventListener('click', initSimulation);
     stepBtn.addEventListener('click', stepSimulation);
     resetBtn.addEventListener('click', resetSimulation);
+    autoStepBtn.addEventListener('click', toggleAutoStep); 
+    speedControl.addEventListener('input', updateSpeed);
     machineSelect.addEventListener('change', async () => {
         await loadMachineConfig(machineSelect.value);
         resetSimulation();
     });
+    speedControl.addEventListener('input', function() {
+        document.getElementById('speed-display').textContent = this.value + 'ms';
+    });
+    document.getElementById('speed-display').textContent = speedControl.value + 'ms';    
 }
+
+function toggleAutoStep() {
+    if (!currentSimulation || currentSimulation.halt) {
+        showError('Cannot start auto-step without a running simulation');
+        return;
+    }
+    
+    if (isAutoStepping) {
+        // Stop auto-stepping
+        clearInterval(autoStepInterval);
+        autoStepInterval = null;
+        isAutoStepping = false;
+        autoStepBtn.textContent = 'Play';
+        autoStepBtn.classList.remove('active');
+        stepBtn.disabled = false;
+    } else {
+        // Start auto-stepping
+        const speed = parseInt(speedControl.value);
+        isAutoStepping = true;
+        autoStepBtn.textContent = 'Pause';
+        autoStepBtn.classList.add('active');
+        stepBtn.disabled = true;
+        
+        // Start the interval
+        autoStepInterval = setInterval(() => {
+            if (currentSimulation && !currentSimulation.halt) {
+                stepSimulation();
+            } else {
+                // Stop if simulation halts
+                clearInterval(autoStepInterval);
+                autoStepInterval = null;
+                isAutoStepping = false;
+                autoStepBtn.textContent = 'Play';
+                autoStepBtn.classList.remove('active');
+                stepBtn.disabled = false;
+            }
+        }, speed);
+    }
+}
+
+// New: Update auto-step speed
+function updateSpeed() {
+    const speed = parseInt(speedControl.value);
+    
+    // If auto-stepping is active, restart with new speed
+    if (isAutoStepping) {
+        clearInterval(autoStepInterval);
+        autoStepInterval = setInterval(() => {
+            if (currentSimulation && !currentSimulation.halt) {
+                stepSimulation();
+            } else {
+                // Stop if simulation halts
+                clearInterval(autoStepInterval);
+                autoStepInterval = null;
+                isAutoStepping = false;
+                autoStepBtn.textContent = 'Play';
+                autoStepBtn.classList.remove('active');
+                stepBtn.disabled = false;
+            }
+        }, speed);
+    }
+}
+
 
 // Load available machines
 async function loadMachines() {
@@ -109,7 +182,9 @@ async function initSimulation() {
         renderTapes();
         updateStatus();
         stepBtn.disabled = false;
+        autoStepBtn.disabled = false;
         showSuccess('Simulation initialized!');
+
     } catch (error) {
         console.error('Initialization error:', error);
         showError(error.message);
@@ -156,6 +231,16 @@ async function stepSimulation() {
         
         if (currentSimulation.halt) {
             stepBtn.disabled = true;
+            autoStepBtn.disabled = true;
+
+            if (isAutoStepping) {
+                clearInterval(autoStepInterval);
+                autoStepInterval = null;
+                isAutoStepping = false;
+                autoStepBtn.textContent = 'Play';
+                autoStepBtn.classList.remove('active');
+            }
+
             if (currentMachineConfig.final_states && 
                 currentMachineConfig.final_states.includes(currentSimulation.state)) {
                 showSuccess('Accepted! Machine halted in final state.');
@@ -171,10 +256,19 @@ async function stepSimulation() {
 
 // Reset simulation
 function resetSimulation() {
+    if (isAutoStepping) {
+        clearInterval(autoStepInterval);
+        autoStepInterval = null;
+        isAutoStepping = false;
+        autoStepBtn.textContent = 'Play';
+        autoStepBtn.classList.remove('active');
+    }
+    
     currentSimulation = null;
     tapesContainer.innerHTML = '';
     updateStatus();
     stepBtn.disabled = true;
+    autoStepBtn.disabled = true;
     statusDisplay.textContent = 'Not initialized';
     statusDisplay.className = 'status-value status-ready';
 }

@@ -332,3 +332,18 @@ footer {
     from { opacity: 1; }
     to { opacity: 0; }
 }
+
+#auto-step-btn.active {
+    background-color: #f39c12;
+}
+
+#speed-control {
+    width: 200px;
+    margin: 0 10px;
+}
+
+#speed-display {
+    min-width: 60px;
+    display: inline-block;
+    text-align: right;
+}
