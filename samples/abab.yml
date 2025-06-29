@@ -1,0 +1,23 @@
+name: "aba*b"
+description: "Accepts strings of form aba*b"
+category: "Language"
+tapes: 1
+blank_symbol: "_"
+initial_state: "q0"
+final_states: ["q_accept"]
+input_spec:
+  - label: "Input"
+    regex: "^ab*$"
+    example: "abab"
+transition:
+  - [[ "q0", ["a"] ], [ "q1", ["a"], ["R"] ]]
+
+  - [[ "q1", ["b"] ], [ "q2", ["b"], ["R"] ]]
+
+  - [[ "q2", ["a"] ], [ "q2", ["a"], ["R"] ]]
+  - [[ "q2", ["b"] ], [ "q3", ["b"], ["R"] ]]
+
+  - [[ "q3", ["_"] ], [ "q_accept", ["_"], ["R"] ]]
+
+  # If in q1 and read blank, reject (odd number of a's)
+  # - [[ "q1", ["_"] ], [ "q_reject", ["_"], ["N"] ]]

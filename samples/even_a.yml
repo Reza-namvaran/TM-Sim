@@ -1,0 +1,25 @@
+name: "Even Number of a's"
+description: "Accepts strings with an even number of a's (e.g. '', 'aa', 'aaaa')"
+category: "Language"
+tapes: 1
+blank_symbol: "_"
+initial_state: "q0"
+final_states: ["q_accept"]
+input_spec:
+  - label: "Input"
+    regex: "^ab*$"
+    example: "abaaba"
+transition:
+  # If in q0 and read 'a', go to q1
+  - [[ "q0", ["a"] ], [ "q1", ["a"], ["R"] ]]
+  - [[ "q0", ["b"] ], [ "q0", ["b"], ["R"] ]]
+
+  # If in q1 and read 'a', go to q0
+  - [[ "q1", ["a"] ], [ "q0", ["a"], ["R"] ]]
+  - [[ "q1", ["b"] ], [ "q1", ["b"], ["R"] ]]
+
+  # If in q0 and read blank, accept
+  - [[ "q0", ["_"] ], [ "q_accept", ["_"], ["N"] ]]
+
+  # If in q1 and read blank, reject (odd number of a's)
+  - [[ "q1", ["_"] ], [ "q_reject", ["_"], ["N"] ]]
