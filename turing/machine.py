@@ -1,7 +1,4 @@
 from .exceptions import SimulationError
-import logging
-
-logger = logging.getLogger(__name__)
 
 class TuringMachine: 
     def __init__(self, config : dict):
@@ -20,10 +17,6 @@ class TuringMachine:
         self.current_state = self.initial_state
         self.halt = False
         self.step_count = 0
-
-        # Logging properties
-        self.logger = logger.getChild(self.__class__.__name__)
-        self.logger.debug("Initializing Turing Machine with config: %s", config)
 
     def initialize_tape(self, inputs:  list[str]) -> None: 
         """Initialize tapes with input strings"""

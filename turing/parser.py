@@ -1,8 +1,5 @@
 import yaml
-import logging
 from .exceptions import InvalidMachineError
-
-logger = logging.getLogger(__name__)
 
 def parse_machine(yaml_content):
     try:
@@ -33,7 +30,6 @@ def _validate_config(config) -> None:
 
     if "final_state" not in config and "final_states" not in config:
         config["final_states"] = [config["final_state"]]
-        logger.warning("No final state defined - machine may run indefinitely")
 
 
     for i, trans in enumerate(config['transition']):

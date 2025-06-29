@@ -8,23 +8,6 @@ import sys
 app = Flask(__name__)
 app.config.from_object("config.Config")
 
-if app.config.get('LOG_TO_FILE', False):
-    # Local development: log to file
-    logging.basicConfig(
-        level=app.config['LOG_LEVEL'],
-        format=app.config['LOG_FORMAT'],
-        filename=app.config['LOG_FILE']
-    )
-else:
-    # Production: log to stdout
-    logging.basicConfig(
-        level=app.config['LOG_LEVEL'],
-        format=app.config['LOG_FORMAT'],
-        stream=sys.stdout
-    )
-
-logger = logging.getLogger(__name__)
-
 SAMPLE_DIR = os.path.join(os.path.dirname(__file__), 'samples')
 samples = {}
 
@@ -35,11 +18,8 @@ for filename in os.listdir(SAMPLE_DIR):
                 content = sample_file.read()
                 config = parse_machine(content)
                 samples[config['name']] = config
-                logger.info(f"Loaded Machine {config['name']}")
         except Exception as err: 
-            logger.error(f"Error Loading {filename}: {str(err)}")
-
-
+            print(f"Error Loading {filename}: {str(err)}")
 
 @app.route('/')
 def home():
@@ -88,7 +68,6 @@ def init_simulate():
         }
         return jsonify(response)
     except Exception as err:
-        logger.error(f"Initilization error: {str(err)}")
         return jsonify({"error": str(err)}), 400
 
 @app.route('/simulate/step', methods=["POST"])
@@ -129,10 +108,8 @@ def step_simulation():
         return jsonify(response)
     
     except SimulationError as e:
-        logger.warning(f"Simulation error: {str(e)}")
         return jsonify({"error": str(e)}), 400
     except Exception as e:
-        logger.error(f"Step error: {str(e)}")
         return jsonify({"error": "Internal server error"}), 500
 
 if __name__ == '__main__':
