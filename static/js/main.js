@@ -306,7 +306,7 @@ function renderTapes() {
                 
                 const headMarker = document.createElement('div');
                 headMarker.className = 'head';
-                headMarker.textContent = '↑';
+                headMarker.textContent = '↓';
                 cell.appendChild(headMarker);
             }
             

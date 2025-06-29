@@ -1,5 +1,5 @@
 name: "Palindrome Checker"
-description: "Accepts strings like 'abba' which are palindrome"
+description: "Accepts strings like 'abba' which are palindrome -> wwR"
 category: "Language"
 tapes: 1
 blank_symbol: "_"

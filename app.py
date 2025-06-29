@@ -1,9 +1,6 @@
 from flask import Flask, render_template, request, jsonify
-from turing import TuringMachine, parse_machine, InvalidMachineError, SimulationError
-import logging
-import yaml
+from turing import TuringMachine, parse_machine, SimulationError
 import os
-import sys
 
 app = Flask(__name__)
 app.config.from_object("config.Config")
