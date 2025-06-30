@@ -4,8 +4,14 @@
     --secondary: #2c3e50;
     --success: #2ecc71;
     --danger: #e74c3c;
-    --light: #ecf0f1;
-    --dark: #2c3e50;
+    --warning: #f39c12;
+    --info: #f1c40f;
+    --accent1: #feb47b;
+    --accent2: #ff7e5f;
+    --light: #ffffff;
+    --dark: #000000;
+    --glass-bg: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(255, 255, 255, 0.1);
 }
 
 /* Reset and base styles */
@@ -155,10 +161,19 @@ button:disabled {
     position: absolute;
     top: -30px;
     left: 50%;
-    transform: translateX(-50%);
     font-size: 2rem;
-    color: #f1c40f;
 }
+
+@keyframes bounceArrow {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(-5px); }
+  }
+  
+  .head {
+    color: #f1c40f;
+    animation: bounceArrow 1s infinite;
+  }
+  
 
 /* Status display */
 .status-card {
