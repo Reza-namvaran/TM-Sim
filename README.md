@@ -52,6 +52,10 @@ Open your browser at [http://127.0.0.1:5000](http://127.0.0.1:5000).
 
 ---
 
+![TM-Flow](./TM-Flow.png)
+
+---
+
 ## Backend (Flask)
 
 ### Structure
