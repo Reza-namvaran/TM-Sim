@@ -3,6 +3,8 @@ let currentSimulation = null;
 let currentMachineConfig = null;
 let autoStepInterval = null;
 let isAutoStepping = false;
+let historyStack = [];       // stores all steps for current input
+let currentHistoryIndex = -1; // tracks current step for undo
 
 // DOM elements
 const machineSelect = document.getElementById('machine-select');
@@ -191,6 +193,28 @@ async function initSimulation() {
     }
 }
 
+function recordStep() {
+    if (!currentSimulation) return;
+
+    // Deep copy of current simulation state
+    const snapshot = {
+        state: currentSimulation.state,
+        tapes: JSON.parse(JSON.stringify(currentSimulation.tapes)),
+        heads: [...currentSimulation.heads],
+        halt: currentSimulation.halt,
+        step_count: currentSimulation.step_count
+    };
+
+    // remove any "future" steps if  undid before
+    historyStack = historyStack.slice(0, currentHistoryIndex + 1);
+
+    historyStack.push(snapshot);
+    currentHistoryIndex = historyStack.length - 1;
+
+    renderHistory();
+}
+
+
 // Step through simulation
 async function stepSimulation() {
     if (!currentSimulation || currentSimulation.halt) {
@@ -248,6 +272,8 @@ async function stepSimulation() {
                 showError('Rejected! Machine halted in non-final state.');
             }
         }
+
+        recordStep();
     } catch (error) {
         console.error('Step error:', error);
         showError(error.message);
@@ -263,15 +289,22 @@ function resetSimulation() {
         autoStepBtn.textContent = 'Play';
         autoStepBtn.classList.remove('active');
     }
-    
+
     currentSimulation = null;
+    historyStack = [];
+    currentHistoryIndex = -1;
+
     tapesContainer.innerHTML = '';
+    const historyContainer = document.getElementById('history-container');
+    if (historyContainer) historyContainer.innerHTML = '';
+
     updateStatus();
     stepBtn.disabled = true;
     autoStepBtn.disabled = true;
     statusDisplay.textContent = 'Not initialized';
     statusDisplay.className = 'status-value status-ready';
 }
+
 
 // Render tape visualization
 function renderTapes() {
@@ -378,3 +411,177 @@ function showSuccess(message) {
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', initApp);
+
+function initApp() {
+    loadMachines();
+    resetSimulation();
+    
+    // Add event listeners
+    initBtn.addEventListener('click', initSimulation);
+    stepBtn.addEventListener('click', stepSimulation);
+    resetBtn.addEventListener('click', resetSimulation);
+    autoStepBtn.addEventListener('click', toggleAutoStep); 
+    speedControl.addEventListener('input', updateSpeed);
+    machineSelect.addEventListener('change', async () => {
+        await loadMachineConfig(machineSelect.value);
+        resetSimulation();
+    });
+    speedControl.addEventListener('input', function() {
+        document.getElementById('speed-display').textContent = this.value + 'ms';
+    });
+    document.getElementById('speed-display').textContent = speedControl.value + 'ms';
+
+    setupTransitionsUI();
+}
+
+// --- Diagnostic + safe setup for transitions UI ---
+function setupTransitionsUI() {
+    const transitionsSection = document.getElementById('transitions-section');
+    const transitionsContainer = document.getElementById('transitions-container');
+    const backBtn = document.getElementById('back-btn');
+    const viewTransitionsBtn = document.getElementById('view-transitions-btn');
+
+    viewTransitionsBtn.addEventListener('click', () => {
+        if (!currentMachineConfig) {
+            showError('No machine loaded!');
+            return;
+        }
+        const transitions = currentMachineConfig.transition || [];
+        renderTransitions(transitions);
+        transitionsSection.style.display = 'block';  // show transitions
+        viewTransitionsBtn.style.display = 'none';   // hide button when open
+    });
+
+    backBtn.addEventListener('click', () => {
+        transitionsSection.style.display = 'none';   // hide transitions
+        viewTransitionsBtn.style.display = 'inline-block'; // show button again
+    });
+}
+
+// Robust renderer — queries container each time to avoid scoping issues
+function renderTransitions(transitions) {
+    const transitionsContainer = document.getElementById('transitions-container');
+    if (!transitionsContainer) {
+        console.error('renderTransitions: container not found');
+        return;
+    }
+
+    transitionsContainer.innerHTML = '';
+
+    if (!Array.isArray(transitions) || transitions.length === 0) {
+        transitionsContainer.innerHTML = '<p>No transitions defined.</p>';
+        return;
+    }
+
+    const escapeHtml = (str) => String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
+    transitions.forEach((trans, index) => {
+        try {
+            let state = '(unknown)';
+            let readSymbols = [];
+            let newState = '(unknown)';
+            let writeSymbols = [];
+            let moves = [];
+
+            if (Array.isArray(trans)) {
+                const read = trans[0] || [];
+                const writeMove = trans[1] || [];
+
+                state = read[0] ?? state;
+                readSymbols = Array.isArray(read[1]) ? read[1] : (read[1] !== undefined ? [read[1]] : []);
+                newState = writeMove[0] ?? newState;
+                writeSymbols = Array.isArray(writeMove[1]) ? writeMove[1] : (writeMove[1] !== undefined ? [writeMove[1]] : []);
+                moves = Array.isArray(writeMove[2]) ? writeMove[2] : (writeMove[2] !== undefined ? [writeMove[2]] : []);
+            } else if (trans && typeof trans === 'object') {
+                const from = trans.from || trans[0] || {};
+                const to = trans.to || trans[1] || {};
+                state = from.state ?? from[0] ?? state;
+                readSymbols = from.read ?? from[1] ?? [];
+                newState = to.state ?? to[0] ?? newState;
+                writeSymbols = to.write ?? to[1] ?? [];
+                moves = to.move ?? to[2] ?? [];
+            } else {
+                throw new Error('Unsupported transition format');
+            }
+
+            readSymbols = (Array.isArray(readSymbols) ? readSymbols : [readSymbols]).map(String);
+            writeSymbols = (Array.isArray(writeSymbols) ? writeSymbols : [writeSymbols]).map(String);
+            moves = (Array.isArray(moves) ? moves : [moves]).map(String);
+
+            const transDiv = document.createElement('div');
+            transDiv.className = 'transition';
+            transDiv.innerHTML = `
+                <strong>Transition ${index + 1}</strong><br>
+                From State: <code>${escapeHtml(state)}</code><br>
+                Read Symbols: <code>[${readSymbols.map(escapeHtml).join(', ')}]</code><br>
+                To State: <code>${escapeHtml(newState)}</code><br>
+                Write Symbols: <code>[${writeSymbols.map(escapeHtml).join(', ')}]</code><br>
+                Moves: <code>[${moves.map(escapeHtml).join(', ')}]</code>
+                <hr>
+            `;
+            transitionsContainer.appendChild(transDiv);
+        } catch (err) {
+            console.error('Error rendering transition', err, trans);
+            const errDiv = document.createElement('div');
+            errDiv.className = 'transition error';
+            errDiv.textContent = `Error rendering transition ${index + 1}`;
+            transitionsContainer.appendChild(errDiv);
+        }
+    });
+}
+
+function renderHistory() {
+    const container = document.getElementById('history-container');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    historyStack.forEach((item, idx) => {
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        div.innerHTML = `
+            <strong>Step ${idx + 1}</strong><br>
+            State: <code>${item.state}</code><br>
+            Tape(s): ${item.tapes.map(t => `<code>[${t.join(', ')}]</code>`).join(' ')}<br>
+            Head(s): <code>[${item.heads.join(', ')}]</code>
+        `;
+        if (idx === currentHistoryIndex) {
+            div.style.backgroundColor = 'rgba(243, 156, 18, 0.5)';
+        }
+        container.appendChild(div);
+    });
+
+    // Scroll to last item
+    container.scrollTop = container.scrollHeight;
+}
+
+document.getElementById('undo-btn').addEventListener('click', () => {
+    if (currentHistoryIndex <= 0) return;
+
+    currentHistoryIndex--;
+    const prevStep = historyStack[currentHistoryIndex];
+
+    if (prevStep) {
+        currentSimulation.state = prevStep.state;
+        currentSimulation.tapes = JSON.parse(JSON.stringify(prevStep.tapes));
+        currentSimulation.heads = [...prevStep.heads];
+        currentSimulation.halt = prevStep.halt;
+        currentSimulation.step_count = prevStep.step_count;
+
+        renderTapes();
+        updateStatus();
+        renderHistory();
+
+        // Re-enable step button if there are steps ahead
+        if (!currentSimulation.halt || currentHistoryIndex < historyStack.length - 1) {
+            stepBtn.disabled = false;
+        }
+        // Re-enable auto-step only if simulation not halted
+        autoStepBtn.disabled = currentSimulation.halt;
+    }
+});

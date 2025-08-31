@@ -12,7 +12,7 @@
         <p>Visualize how Turing Machines process input step-by-step</p>
     </header>
     
-    <main class="container">
+    <main class="container" id="container">
         <section id="machine-selection">
             <h2>1. Select a Turing Machine</h2>
             <div class="control-group">
@@ -70,6 +70,28 @@
                 <span id="speed-display">500ms</span>
             </div>
         </section>
+        
+        <!-- History Section -->
+        <section id="history-section">
+            <h2>Simulation History</h2>
+            <div id="history-container"></div>
+            <div class="control-group">
+                <button id="undo-btn">Undo Step</button>
+            </div>
+        </section>
+        
+        <!-- Transitions Section -->
+        <section id="transitions-section" style="display:none;">
+            <h2>Machine Transitions</h2>
+            <div class="control-group">
+                <button id="back-btn">Back</button>
+            </div>
+            <div id="transitions-container"></div>
+        </section>        
+
+        <div class="control-group" style="margin-top:20px;">
+            <button id="view-transitions-btn">View Transitions</button>
+        </div>
     </main>
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
